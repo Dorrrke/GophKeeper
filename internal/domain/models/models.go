@@ -22,3 +22,8 @@ type BinaryDataModel struct {
 	Name string
 	Data []byte
 }
+
+type UserModel struct {
+	Login string
+	Hash  string
+}
