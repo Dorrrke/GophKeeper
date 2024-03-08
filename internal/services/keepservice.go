@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/Dorrrke/GophKeeper/internal/domain/models"
-	"github.com/rs/zerolog"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -15,24 +14,28 @@ type Storage interface {
 	SaveCard(ctx context.Context, card models.CardModel) (int64, error)
 	SaveLogin(ctx context.Context, login models.LoginModel) (int64, error)
 	SaveText(ctx context.Context, text models.TextDataModel) (int64, error)
+	GetAllCards(ctx context.Context) ([]models.CardModel, error)
+	GetAllLogins(ctx context.Context) ([]models.LoginModel, error)
+	GetAllTextData(ctx context.Context) ([]models.TextDataModel, error)
+	GetCardByName(ctx context.Context, name string) (models.CardModel, error)
+	GetLoginByName(ctx context.Context, name string) (models.LoginModel, error)
+	GetTextDataByName(ctx context.Context, name string) (models.TextDataModel, error)
 }
 
 type KeepService struct {
 	stor Storage
-	zlog *zerolog.Logger
 }
 
-func New(stor Storage, log *zerolog.Logger) *KeepService {
+func New(stor Storage) *KeepService {
 	return &KeepService{
 		stor: stor,
-		zlog: log,
 	}
 }
 
-func (kp *KeepService) RegisterUser(login string, pass string) error {
+func (kp *KeepService) RegisterUser(login string, pass string) (int64, error) {
 	hash, err := hashPass(pass)
 	if err != nil {
-		return err
+		return -1, err
 	}
 	uID, err := kp.stor.SaveUser(context.Background(), models.UserModel{
 		Login: login,
@@ -40,63 +43,101 @@ func (kp *KeepService) RegisterUser(login string, pass string) error {
 	})
 	if err != nil {
 		// TODO: Обработка ошибки гадичия такого пользователя.
-		kp.zlog.Error().Err(err).Msg("save user error")
-		return err
+		return -1, err
 	}
-	kp.zlog.Debug().Int64("uId", uID).Msg("User was saved")
-	return nil
+	return uID, nil
 }
 
 func (kp *KeepService) LoginUser(login string, pass string) error {
 	hashFromDB, err := kp.stor.GetUserHash(context.Background(), login)
 	if err != nil {
 		// TODO: Обработка ошибки отсутствия пользователя.
-		kp.zlog.Error().Err(err).Msg("get user password hash from db error")
 		return err
 	}
 	if !matchPass(pass, hashFromDB) {
-		kp.zlog.Error().Err(err).Msg("invalid login or password")
 		return fmt.Errorf("invalid login or password")
 	}
 	return nil
 }
 
-func (kp *KeepService) SaveCard(card models.CardModel) error {
+func (kp *KeepService) SaveCard(card models.CardModel) (int64, error) {
 	cID, err := kp.stor.SaveCard(context.Background(), card)
 	if err != nil {
 		//TODO: Проверка ошибки на наличие такой карты в бд
-		kp.zlog.Error().Err(err).Msg("save card error")
-		return err
+		return -1, err
 	}
-	kp.zlog.Debug().Int64("cId", cID).Msg("saved card id")
-	return nil
+	return cID, nil
 }
 
-func (kp *KeepService) SaveLogin(loginData models.LoginModel) error {
-	cID, err := kp.stor.SaveLogin(context.Background(), loginData)
+func (kp *KeepService) SaveLogin(loginData models.LoginModel) (int64, error) {
+	lID, err := kp.stor.SaveLogin(context.Background(), loginData)
 	if err != nil {
 		//TODO: Проверка ошибки на наличие таких данных в бд
-		kp.zlog.Error().Err(err).Msg("save loginData error")
-		return err
+		return -1, err
 	}
-	kp.zlog.Debug().Int64("lId", cID).Msg("saved login data id")
-	return nil
+	return lID, nil
 }
 
-func (kp *KeepService) SaveTextData(textData models.TextDataModel) error {
-	cID, err := kp.stor.SaveText(context.Background(), textData)
+func (kp *KeepService) SaveTextData(textData models.TextDataModel) (int64, error) {
+	tID, err := kp.stor.SaveText(context.Background(), textData)
 	if err != nil {
 		//TODO: Проверка ошибки на наличие таких данных в бд
-		kp.zlog.Error().Err(err).Msg("save textData error")
-		return err
+		return -1, err
 	}
-	kp.zlog.Debug().Int64("tId", cID).Msg("saved text data id")
-	return nil
+	return tID, nil
 }
 
 func (kp *KeepService) SaveBinaryData(card models.BinaryDataModel) error {
 
 	return nil
+}
+
+func (kp *KeepService) GetCards() ([]models.CardModel, error) {
+	cards, err := kp.stor.GetAllCards(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return cards, nil
+}
+
+func (kp *KeepService) GetLogins() ([]models.LoginModel, error) {
+	logins, err := kp.stor.GetAllLogins(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return logins, nil
+}
+
+func (kp *KeepService) GetTextData() ([]models.TextDataModel, error) {
+	tData, err := kp.stor.GetAllTextData(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	return tData, nil
+}
+
+func (kp *KeepService) GetCardByName(cName string) (models.CardModel, error) {
+	card, err := kp.stor.GetCardByName(context.Background(), cName)
+	if err != nil {
+		return models.CardModel{}, err
+	}
+	return card, nil
+}
+
+func (kp *KeepService) GetLoginByName(lName string) (models.LoginModel, error) {
+	login, err := kp.stor.GetLoginByName(context.Background(), lName)
+	if err != nil {
+		return models.LoginModel{}, err
+	}
+	return login, nil
+}
+
+func (kp *KeepService) GetTextDataByName(tName string) (models.TextDataModel, error) {
+	tData, err := kp.stor.GetTextDataByName(context.Background(), tName)
+	if err != nil {
+		return models.TextDataModel{}, err
+	}
+	return tData, nil
 }
 
 func hashPass(pass string) (string, error) {
