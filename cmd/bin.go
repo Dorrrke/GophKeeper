@@ -6,19 +6,20 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/Dorrrke/GophKeeper/internal/storage"
 	"github.com/spf13/cobra"
 )
 
-// loginCmd represents the login command
-var loginCmd = &cobra.Command{
-	Use:   "login",
-	Short: "Отображает данные сохраненой пары логин пароль с указанным именем",
-	Long: `При вызове отображает данные сохраненой пары логин пароль с указанным именем.
+// binCmd represents the bin command
+var binCmd = &cobra.Command{
+	Use:   "bin",
+	Short: "Отображает данные сохраненых бинарных данных с указанным именем",
+	Long: `При вызове отображает бинарные данные с указанным именем.
 	При наличии подключения к интернету, данные будут браться из удаленного сервера`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("login called")
+		fmt.Println("bin called")
 		keepService, err := setupService()
 		if err != nil {
 			fmt.Printf("Ошибка при конфигурации сервиса %s", err.Error())
@@ -28,30 +29,44 @@ var loginCmd = &cobra.Command{
 			fmt.Printf("Ошибка при получении данных %s", err.Error())
 			return
 		}
-		login, err := keepService.GetLoginByName(args[0], userModel.UserID)
+		bin, err := keepService.GetBinByName(args[0], userModel.UserID)
 		if err != nil {
-			if errors.Is(err, storage.ErrLoginNotExist) {
-				fmt.Printf("Пары логин/пароль сохраненных с таким именем не существует.")
+			if errors.Is(err, storage.ErrBinDataNotExist) {
+				fmt.Printf("Бинарных данных сохраненных с таким именем не существует.")
 				return
 			}
 			fmt.Printf("Ошибка при получении данных %s", err.Error())
 			return
 		}
-		fmt.Printf("\nLogin name: %s \n\tLogin: %s \n\tPassword: %s\n",
-			login.Name, login.Login, login.Password)
+		writeBinFile(bin.Name, bin.Data)
+		fmt.Println("Created saved bin file with name " + bin.Name)
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(loginCmd)
+	rootCmd.AddCommand(binCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// loginCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// binCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// loginCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// binCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func writeBinFile(name string, bData []byte) error {
+	f, err := os.Open(name + ".bin")
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	_, err = f.Write(bData)
+	if err != nil {
+		return err
+	}
+	return nil
 }

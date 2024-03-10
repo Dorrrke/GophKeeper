@@ -24,6 +24,7 @@ type BinaryDataModel struct {
 }
 
 type UserModel struct {
-	Login string
-	Hash  string
+	UserID int64  `json:"u_id"`
+	Login  string `json:"login"`
+	Hash   string `json:"hash"`
 }

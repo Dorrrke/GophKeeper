@@ -17,10 +17,22 @@ var getloginsCmd = &cobra.Command{
 	При наличии подключения к интернету, данные будут браться из удаленного сервера.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("getlogins called")
-
-		res, err := getLogins()
+		keepService, err := setupService()
+		if err != nil {
+			fmt.Printf("Ошибка при конфигурации сервиса %s", err.Error())
+		}
+		userModel, err := getUserID()
+		if err != nil {
+			fmt.Printf("Ошибка при получении данных %s", err.Error())
+			return
+		}
+		res, err := keepService.GetLogins(userModel.UserID)
 		if err != nil {
 			fmt.Printf("Ошибка при получении данных: %s", err.Error())
+		}
+		if len(res) == 0 {
+			fmt.Printf("Нет сохраненных данных")
+			return
 		}
 		logins := ""
 		for _, login := range res {

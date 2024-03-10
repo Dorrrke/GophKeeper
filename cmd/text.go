@@ -4,8 +4,10 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"errors"
 	"fmt"
 
+	"github.com/Dorrrke/GophKeeper/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -19,12 +21,26 @@ var textCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("text called")
 
-		text, err := getText(args[0])
+		keepService, err := setupService()
+		if err != nil {
+			fmt.Printf("Ошибка при конфигурации сервиса %s", err.Error())
+		}
+		userModel, err := getUserID()
 		if err != nil {
 			fmt.Printf("Ошибка при получении данных %s", err.Error())
+			return
+		}
+		tData, err := keepService.GetTextDataByName(args[0], userModel.UserID)
+		if err != nil {
+			if errors.Is(err, storage.ErrTextNotExist) {
+				fmt.Printf("Текстовых данных сохраненных с таким именем не существует.")
+				return
+			}
+			fmt.Printf("Ошибка при получении данных %s", err.Error())
+			return
 		}
 		fmt.Printf("\nText name: %s \n\tData: %s\n",
-			text.Name, text.Data)
+			tData.Name, tData.Data)
 	},
 }
 

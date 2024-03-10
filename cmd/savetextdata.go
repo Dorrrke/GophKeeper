@@ -6,9 +6,12 @@ package cmd
 import (
 	"bufio"
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 
+	"github.com/Dorrrke/GophKeeper/internal/domain/models"
+	"github.com/Dorrrke/GophKeeper/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -26,10 +29,19 @@ var savetextdataCmd = &cobra.Command{
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("savetextdata called")
+		keepService, err := setupService()
+		if err != nil {
+			fmt.Printf("Ошибка при конфигурации сервиса %s", err.Error())
+		}
 
 		filePath, err := cmd.Flags().GetBool("file")
 		if err != nil {
 			fmt.Printf("Ошибка при получении флага: %s", err.Error())
+		}
+		userModel, err := getUserID()
+		if err != nil {
+			fmt.Printf("Ошибка при получении данных %s", err.Error())
+			return
 		}
 		if filePath {
 			data, err := parseFromeFile(args[1])
@@ -37,17 +49,35 @@ var savetextdataCmd = &cobra.Command{
 				fmt.Printf("Ошибка при получении данных из файла: %s", err.Error())
 				return
 			}
-			res, err := saveTextData(args[0], data)
-			if err != nil {
-				fmt.Printf("Ошибка при сохранении данных: %s", err.Error())
+			textData := models.TextDataModel{
+				Name: args[0],
+				Data: data,
 			}
-			fmt.Println(res)
+			cID, err := keepService.SaveTextData(textData, userModel.UserID)
+			if err != nil {
+				if errors.Is(err, storage.ErrTextAlredyExist) {
+					fmt.Printf("Текстовые данные с таким именем уже существуют")
+					return
+				}
+				fmt.Printf("Ошибка при сохранении данных: %s", err.Error())
+				return
+			}
+			fmt.Println(cID)
 		} else {
-			res, err := saveTextData(args[0], args[1])
-			if err != nil {
-				fmt.Printf("Ошибка при сохранении данных: %s", err.Error())
+			textData := models.TextDataModel{
+				Name: args[0],
+				Data: args[1],
 			}
-			fmt.Println(res)
+			cID, err := keepService.SaveTextData(textData, userModel.UserID)
+			if err != nil {
+				if errors.Is(err, storage.ErrTextAlredyExist) {
+					fmt.Printf("Текстовые данные с таким именем уже существуют")
+					return
+				}
+				fmt.Printf("Ошибка при сохранении данных: %s", err.Error())
+				return
+			}
+			fmt.Println(cID)
 		}
 	},
 }

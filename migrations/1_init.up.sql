@@ -10,7 +10,8 @@ CREATE TABLE IF NOT EXISTS cards (
     name TEXT, 
     number TEXT, 
     date TEXT, 
-    cvv INTEGER
+    cvv INTEGER,
+    uId INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_card_name ON cards (name);
 
@@ -18,20 +19,23 @@ CREATE TABLE IF NOT EXISTS logins (
     lId INTEGER PRIMARY KEY, 
     name TEXT, 
     login TEXT, 
-    password TEXT
+    password TEXT,
+    uId INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_login_name ON logins (name);
 
 CREATE TABLE IF NOT EXISTS text_data (
     tId INTEGER PRIMARY KEY, 
     name TEXT, 
-    data TEXT
+    data TEXT,
+    uId INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_text_name ON text_data (name);
 
 CREATE TABLE IF NOT EXISTS binares_data (
     bId INTEGER PRIMARY KEY, 
     name TEXT, 
-    data TEXT
+    data TEXT,
+    uId INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_binares_name ON binares_data (name);
