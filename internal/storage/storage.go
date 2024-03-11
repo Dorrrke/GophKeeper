@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"time"
 
 	errText "github.com/Dorrrke/GophKeeper/internal/domain/errors"
 	"github.com/Dorrrke/GophKeeper/internal/domain/models"
@@ -76,15 +78,17 @@ func (s *Storage) GetUserHash(ctx context.Context, login string) (int64, string,
 }
 
 func (s *Storage) SaveCard(ctx context.Context, card models.CardModel, uID int64) (int64, error) {
-	stmt, err := s.db.Prepare("INSERT INTO cards(name, number, date, cvv, uId) VALUES(?,?,?,?,?)")
+	stmt, err := s.db.Prepare("INSERT INTO cards(name, number, date, cvv, uId, deleted, last_update) VALUES(?,?,?,?,?,?,?)")
 	if err != nil {
 		return 0, err
 	}
 
-	res, err := stmt.ExecContext(ctx, card.Name, card.Number, card.Date, card.CVVCode, uID)
+	t := time.Now()
+	res, err := stmt.ExecContext(ctx, card.Name, card.Number, card.Date, card.CVVCode, uID, false, t.Format(time.RFC3339))
 	if err != nil {
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
+			fmt.Println("exist")
 			return 0, ErrCardAlredyExist
 		}
 		return 0, err
@@ -98,12 +102,12 @@ func (s *Storage) SaveCard(ctx context.Context, card models.CardModel, uID int64
 }
 
 func (s *Storage) SaveLogin(ctx context.Context, loginData models.LoginModel, uID int64) (int64, error) {
-	stmt, err := s.db.Prepare("INSERT INTO logins(name, login, password, uId) VALUES(?,?,?,?)")
+	stmt, err := s.db.Prepare("INSERT INTO logins(name, login, password, uId, deleted, last_update) VALUES(?,?,?,?,?,?)")
 	if err != nil {
 		return 0, err
 	}
-
-	res, err := stmt.ExecContext(ctx, loginData.Name, loginData.Login, loginData.Password, uID)
+	t := time.Now()
+	res, err := stmt.ExecContext(ctx, loginData.Name, loginData.Login, loginData.Password, uID, false, t.Format(time.RFC3339))
 	if err != nil {
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
@@ -120,12 +124,13 @@ func (s *Storage) SaveLogin(ctx context.Context, loginData models.LoginModel, uI
 }
 
 func (s *Storage) SaveText(ctx context.Context, textData models.TextDataModel, uID int64) (int64, error) {
-	stmt, err := s.db.Prepare("INSERT INTO text_data(name, data, uId) VALUES(?,?,?)")
+	stmt, err := s.db.Prepare("INSERT INTO text_data(name, data, uId, deleted, last_update) VALUES(?,?,?,?,?)")
 	if err != nil {
 		return 0, err
 	}
 
-	res, err := stmt.ExecContext(ctx, textData.Name, textData.Data, uID)
+	t := time.Now()
+	res, err := stmt.ExecContext(ctx, textData.Name, textData.Data, uID, false, t.Format(time.RFC3339))
 	if err != nil {
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
@@ -142,12 +147,13 @@ func (s *Storage) SaveText(ctx context.Context, textData models.TextDataModel, u
 }
 
 func (s *Storage) SaveBin(ctx context.Context, binData models.BinaryDataModel, uID int64) (int64, error) {
-	stmt, err := s.db.Prepare("INSERT INTO binares_data(name, data, uId) VALUES(?,?,?)")
+	stmt, err := s.db.Prepare("INSERT INTO binares_data(name, data, uId, deleted, last_update) VALUES(?,?,?,?,?)")
 	if err != nil {
 		return 0, err
 	}
 
-	res, err := stmt.ExecContext(ctx, binData.Name, binData.Data, uID)
+	t := time.Now()
+	res, err := stmt.ExecContext(ctx, binData.Name, binData.Data, uID, false, t.Format(time.RFC3339))
 	if err != nil {
 		var sqliteErr sqlite3.Error
 		if errors.As(err, &sqliteErr) && sqliteErr.ExtendedCode == sqlite3.ErrConstraintUnique {
@@ -164,7 +170,7 @@ func (s *Storage) SaveBin(ctx context.Context, binData models.BinaryDataModel, u
 }
 
 func (s *Storage) GetAllCards(ctx context.Context, uID int64) ([]models.CardModel, error) {
-	stmt, err := s.db.Prepare("SELECT name, number, date, cvv FROM cards WHERE uId=?")
+	stmt, err := s.db.Prepare("SELECT name, number, date, cvv FROM cards WHERE uId=? AND deleted=0")
 	if err != nil {
 		return nil, err
 	}
@@ -192,7 +198,7 @@ func (s *Storage) GetAllCards(ctx context.Context, uID int64) ([]models.CardMode
 }
 
 func (s *Storage) GetAllLogins(ctx context.Context, uID int64) ([]models.LoginModel, error) {
-	stmt, err := s.db.Prepare("SELECT name, login, password FROM logins WHERE uId=?")
+	stmt, err := s.db.Prepare("SELECT name, login, password FROM logins WHERE uId=? AND deleted=0")
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +226,7 @@ func (s *Storage) GetAllLogins(ctx context.Context, uID int64) ([]models.LoginMo
 }
 
 func (s *Storage) GetAllTextData(ctx context.Context, uID int64) ([]models.TextDataModel, error) {
-	stmt, err := s.db.Prepare("SELECT name, data FROM text_data WHERE uId=?")
+	stmt, err := s.db.Prepare("SELECT name, data FROM text_data WHERE uId=? AND deleted=0")
 	if err != nil {
 		return nil, err
 	}
@@ -248,7 +254,7 @@ func (s *Storage) GetAllTextData(ctx context.Context, uID int64) ([]models.TextD
 }
 
 func (s *Storage) GetAllBin(ctx context.Context, uID int64) ([]models.BinaryDataModel, error) {
-	stmt, err := s.db.Prepare("SELECT name, data FROM binares_data WHERE uId=?")
+	stmt, err := s.db.Prepare("SELECT name, data FROM binares_data WHERE uId=? AND deleted=0")
 	if err != nil {
 		return nil, err
 	}
@@ -276,7 +282,7 @@ func (s *Storage) GetAllBin(ctx context.Context, uID int64) ([]models.BinaryData
 }
 
 func (s *Storage) GetCardByName(ctx context.Context, name string, uID int64) (models.CardModel, error) {
-	stmt, err := s.db.Prepare("SELECT name, number, date, cvv FROM cards WHERE name = ? AND uId = ?")
+	stmt, err := s.db.Prepare("SELECT name, number, date, cvv FROM cards WHERE name = ? AND uId = ? AND deleted=0")
 	if err != nil {
 		return models.CardModel{}, err
 	}
@@ -294,7 +300,7 @@ func (s *Storage) GetCardByName(ctx context.Context, name string, uID int64) (mo
 }
 
 func (s *Storage) GetLoginByName(ctx context.Context, name string, uID int64) (models.LoginModel, error) {
-	stmt, err := s.db.Prepare("SELECT name, login, password FROM logins WHERE name = ? AND uId = ?")
+	stmt, err := s.db.Prepare("SELECT name, login, password FROM logins WHERE name = ? AND uId = ? AND deleted=0")
 	if err != nil {
 		return models.LoginModel{}, err
 	}
@@ -312,7 +318,7 @@ func (s *Storage) GetLoginByName(ctx context.Context, name string, uID int64) (m
 }
 
 func (s *Storage) GetTextDataByName(ctx context.Context, name string, uID int64) (models.TextDataModel, error) {
-	stmt, err := s.db.Prepare("SELECT name, data FROM text_data WHERE name = ? AND uId = ?")
+	stmt, err := s.db.Prepare("SELECT name, data FROM text_data WHERE name = ? AND uId = ? AND deleted=0")
 	if err != nil {
 		return models.TextDataModel{}, err
 	}
@@ -330,7 +336,7 @@ func (s *Storage) GetTextDataByName(ctx context.Context, name string, uID int64)
 }
 
 func (s *Storage) GetBinByName(ctx context.Context, name string, uID int64) (models.BinaryDataModel, error) {
-	stmt, err := s.db.Prepare("SELECT name, data FROM binares_data WHERE name = ? AND uId = ?")
+	stmt, err := s.db.Prepare("SELECT name, data FROM binares_data WHERE name = ? AND uId = ? AND deleted=0")
 	if err != nil {
 		return models.BinaryDataModel{}, err
 	}
@@ -345,4 +351,108 @@ func (s *Storage) GetBinByName(ctx context.Context, name string, uID int64) (mod
 		return models.BinaryDataModel{}, err
 	}
 	return data, nil
+}
+
+func (s *Storage) DeleteCard(ctx context.Context, name string, uID int64) error {
+	stmt, err := s.db.Prepare("UPDATE cards SET deleted = 1, last_update = ? WHERE name = ? AND uId = ?")
+	if err != nil {
+		return err
+	}
+	t := time.Now()
+	_, err = stmt.ExecContext(ctx, t.Format(time.RFC3339), name, uID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Storage) DeleteLogin(ctx context.Context, name string, uID int64) error {
+	stmt, err := s.db.Prepare("UPDATE logins SET deleted = 1, last_update = ?  WHERE name = ? AND uId = ?")
+	if err != nil {
+		return err
+	}
+	t := time.Now()
+	_, err = stmt.ExecContext(ctx, t.Format(time.RFC3339), name, uID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Storage) DeleteText(ctx context.Context, name string, uID int64) error {
+	stmt, err := s.db.Prepare("UPDATE text_data SET deleted = 1, last_update = ?  WHERE name = ? AND uId = ?")
+	if err != nil {
+		return err
+	}
+	t := time.Now()
+	_, err = stmt.ExecContext(ctx, t.Format(time.RFC3339), name, uID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Storage) DeleteBin(ctx context.Context, name string, uID int64) error {
+	stmt, err := s.db.Prepare("UPDATE binares_data SET deleted = 1, last_update = ?  WHERE name = ? AND uId = ?")
+	if err != nil {
+		return err
+	}
+	t := time.Now()
+	_, err = stmt.ExecContext(ctx, t.Format(time.RFC3339), name, uID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Storage) UpdateCard(ctx context.Context, card models.CardModel, uID int64) error {
+	stmt, err := s.db.Prepare("UPDATE cards SET name = ?, number = ?, date = ?, cvv = ?, last_update = ? WHERE name = ? and uId = ?")
+	if err != nil {
+		return err
+	}
+	lTime := time.Now().Format(time.RFC3339)
+	_, err = stmt.ExecContext(ctx, card.Name, card.Number, card.Date, card.CVVCode, lTime, card.Name, uID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Storage) UpdateLogin(ctx context.Context, auth models.LoginModel, uID int64) error {
+	stmt, err := s.db.Prepare("UPDATE logins SET name = ?, login = ?, password = ?, last_update = ? WHERE name = ? and uId = ?")
+	if err != nil {
+		return err
+	}
+	lTime := time.Now().Format(time.RFC3339)
+	_, err = stmt.ExecContext(ctx, auth.Name, auth.Login, auth.Password, lTime, auth.Name, uID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Storage) UpdateText(ctx context.Context, data models.TextDataModel, uID int64) error {
+	stmt, err := s.db.Prepare("UPDATE text_data SET name = ?, data = ?, last_update = ? WHERE name = ? and uId = ?")
+	if err != nil {
+		return err
+	}
+	lTime := time.Now().Format(time.RFC3339)
+	_, err = stmt.ExecContext(ctx, data.Name, data.Data, lTime, data.Name, uID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Storage) UpdateBin(ctx context.Context, data models.BinaryDataModel, uID int64) error {
+	stmt, err := s.db.Prepare("UPDATE binares_data SET name = ?, data = ?, last_update = ? WHERE name = ? and uId = ?")
+	if err != nil {
+		return err
+	}
+	lTime := time.Now().Format(time.RFC3339)
+	_, err = stmt.ExecContext(ctx, data.Name, data.Data, lTime, data.Name, uID)
+	if err != nil {
+		return err
+	}
+	return nil
 }

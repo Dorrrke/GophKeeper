@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Dorrrke/GophKeeper/internal/coder"
 	"github.com/Dorrrke/GophKeeper/internal/domain/models"
 	"github.com/Dorrrke/GophKeeper/internal/services"
 	"github.com/Dorrrke/GophKeeper/internal/storage"
@@ -72,7 +73,11 @@ func createConfigFile(auth models.UserModel) error {
 	if err != nil {
 		return err
 	}
-	_, err = f.WriteString(string(authData))
+	encData, err := coder.Encoder(authData)
+	if err != nil {
+		return err
+	}
+	_, err = f.WriteString(string(encData))
 	if err != nil {
 		return err
 	}

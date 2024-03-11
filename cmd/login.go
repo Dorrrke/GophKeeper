@@ -28,6 +28,19 @@ var loginCmd = &cobra.Command{
 			fmt.Printf("Ошибка при получении данных %s", err.Error())
 			return
 		}
+		delFlag, err := cmd.Flags().GetBool("delete")
+		if err != nil {
+			fmt.Printf("Ошибка при получении флага: %s", err.Error())
+		}
+		if delFlag {
+			err = keepService.DeleteLoginByName(args[0], userModel.UserID)
+			if err != nil {
+				fmt.Printf("Ошибка при удалении данных %s", err.Error())
+				return
+			}
+			fmt.Printf("Успешное удаление\n")
+			return
+		}
 		login, err := keepService.GetLoginByName(args[0], userModel.UserID)
 		if err != nil {
 			if errors.Is(err, storage.ErrLoginNotExist) {
@@ -44,6 +57,7 @@ var loginCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(loginCmd)
+	loginCmd.Flags().Bool("delete", false, "Удаление данных")
 
 	// Here you will define your flags and configuration settings.
 

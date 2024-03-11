@@ -29,6 +29,19 @@ var binCmd = &cobra.Command{
 			fmt.Printf("Ошибка при получении данных %s", err.Error())
 			return
 		}
+		delFlag, err := cmd.Flags().GetBool("delete")
+		if err != nil {
+			fmt.Printf("Ошибка при получении флага: %s", err.Error())
+		}
+		if delFlag {
+			err = keepService.DeleteBinByName(args[0], userModel.UserID)
+			if err != nil {
+				fmt.Printf("Ошибка при удалении данных %s", err.Error())
+				return
+			}
+			fmt.Printf("Успешное удаление\n")
+			return
+		}
 		bin, err := keepService.GetBinByName(args[0], userModel.UserID)
 		if err != nil {
 			if errors.Is(err, storage.ErrBinDataNotExist) {
@@ -45,6 +58,7 @@ var binCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(binCmd)
+	binCmd.Flags().Bool("delete", false, "Удаление данных")
 
 	// Here you will define your flags and configuration settings.
 
