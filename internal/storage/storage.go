@@ -91,6 +91,7 @@ func (s *Storage) SaveCard(ctx context.Context, card models.CardModel, uID int64
 			fmt.Println("exist")
 			return 0, ErrCardAlredyExist
 		}
+
 		return 0, err
 	}
 	cID, err := res.LastInsertId()
@@ -454,5 +455,138 @@ func (s *Storage) UpdateBin(ctx context.Context, data models.BinaryDataModel, uI
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (s *Storage) GetAllSaves(ctx context.Context, uID int64) (models.SyncModel, error) {
+	stmt, err := s.db.Prepare("SELECT name, data, uId, deleted, last_update FROM binares_data WHERE uId = ?")
+	if err != nil {
+		return models.SyncModel{}, err
+	}
+	binRows, err := stmt.QueryContext(ctx, uID)
+	if err != nil {
+		return models.SyncModel{}, err
+	}
+	defer binRows.Close()
+	var binData []models.SyncBinaryDataModel
+	for binRows.Next() {
+		var data models.SyncBinaryDataModel
+		err := binRows.Scan(&data.Name, &data.Data, &data.UserID, &data.Deleted, &data.Updated)
+		if err != nil {
+			return models.SyncModel{}, err
+		}
+		binData = append(binData, data)
+	}
+
+	stmt, err = s.db.Prepare("SELECT name, data, uId, deleted, last_update FROM text_data WHERE uId = ?")
+	if err != nil {
+		return models.SyncModel{}, err
+	}
+	textRows, err := stmt.QueryContext(ctx, uID)
+	if err != nil {
+		return models.SyncModel{}, err
+	}
+	defer textRows.Close()
+	var textData []models.SyncTextDataModel
+	for textRows.Next() {
+		var data models.SyncTextDataModel
+		err := textRows.Scan(&data.Name, &data.Data, &data.UserID, &data.Deleted, &data.Updated)
+		if err != nil {
+			return models.SyncModel{}, err
+		}
+		textData = append(textData, data)
+	}
+
+	stmt, err = s.db.Prepare("SELECT name, login, password, uId, deleted, last_update FROM logins WHERE uId = ?")
+	if err != nil {
+		return models.SyncModel{}, err
+	}
+	authRows, err := stmt.QueryContext(ctx, uID)
+	if err != nil {
+		return models.SyncModel{}, err
+	}
+	defer authRows.Close()
+	var loginData []models.SyncLoginModel
+	for authRows.Next() {
+		var data models.SyncLoginModel
+		err := authRows.Scan(&data.Name, &data.Login, &data.Password, &data.UserID, &data.Deleted, &data.Updated)
+		if err != nil {
+			return models.SyncModel{}, err
+		}
+		loginData = append(loginData, data)
+	}
+
+	stmt, err = s.db.Prepare("SELECT name, number, date, cvv, uId, deleted, last_update FROM cards WHERE uId = ?")
+	if err != nil {
+		return models.SyncModel{}, err
+	}
+	cardsRows, err := stmt.QueryContext(ctx, uID)
+	if err != nil {
+		return models.SyncModel{}, err
+	}
+	defer cardsRows.Close()
+	var cardData []models.SyncCardModel
+	for cardsRows.Next() {
+		var data models.SyncCardModel
+		err := cardsRows.Scan(&data.Name, &data.Number, &data.Date, &data.CVVCode, &data.UserID, &data.Deleted, &data.Updated)
+		if err != nil {
+			return models.SyncModel{}, err
+		}
+		cardData = append(cardData, data)
+	}
+
+	return models.SyncModel{
+		Cards: cardData,
+		Auth:  loginData,
+		Texts: textData,
+		Bins:  binData,
+	}, err
+}
+
+func (s *Storage) Sync(ctx context.Context, model models.SyncModel) error {
+	stmt, err := s.db.Prepare("UPDATE cards SET name =?, number = ?, date = ?, cvv = ?, uId = ?, deleted = ?, last_update = ?")
+	if err != nil {
+		return err
+	}
+	for _, card := range model.Cards {
+		_, err := stmt.ExecContext(ctx, card.Name, card.Number, card.Date, card.CVVCode, card.UserID, card.Deleted, card.Updated)
+		if err != nil {
+			return err
+		}
+	}
+
+	stmt, err = s.db.Prepare("UPDATE logins SET name =?, login = ?, password = ?, uId = ?, deleted = ?, last_update = ?")
+	if err != nil {
+		return err
+	}
+	for _, auth := range model.Auth {
+		_, err := stmt.ExecContext(ctx, auth.Name, auth.Login, auth.Password, auth.UserID, auth.Deleted, auth.Updated)
+		if err != nil {
+			return err
+		}
+	}
+
+	stmt, err = s.db.Prepare("UPDATE text_data SET name =?, data = ?, uId = ?, deleted = ?, last_update = ?")
+	if err != nil {
+		return err
+	}
+	for _, text := range model.Texts {
+		_, err := stmt.ExecContext(ctx, text.Name, text.Data, text.UserID, text.Deleted, text.Updated)
+		if err != nil {
+			return err
+		}
+	}
+
+	stmt, err = s.db.Prepare("UPDATE binares_data SET name =?, data = ?, uId = ?, deleted = ?, last_update = ?")
+	if err != nil {
+		return err
+	}
+	for _, bin := range model.Bins {
+		_, err := stmt.ExecContext(ctx, bin.Name, bin.Data, bin.UserID, bin.Deleted, bin.Updated)
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

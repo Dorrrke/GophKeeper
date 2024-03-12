@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/Dorrrke/GophKeeper/internal/client"
 	errText "github.com/Dorrrke/GophKeeper/internal/domain/errors"
 	"github.com/Dorrrke/GophKeeper/internal/domain/models"
 	"golang.org/x/crypto/bcrypt"
@@ -34,12 +35,16 @@ type Storage interface {
 	UpdateLogin(ctx context.Context, auth models.LoginModel, uID int64) error
 	UpdateText(ctx context.Context, data models.TextDataModel, uID int64) error
 	UpdateBin(ctx context.Context, data models.BinaryDataModel, uID int64) error
+	GetAllSaves(ctx context.Context, uID int64) (models.SyncModel, error)
+	Sync(ctx context.Context, model models.SyncModel) error
 }
 
 type KeepService struct {
-	stor Storage
+	keepClient *client.KeeperClient
+	stor       Storage
 }
 
+// TODO: Добавить килент
 func New(stor Storage) *KeepService {
 	return &KeepService{
 		stor: stor,
@@ -208,6 +213,22 @@ func (kp *KeepService) UpdateText(data models.TextDataModel, uID int64) error {
 func (kp *KeepService) UpdateBin(data models.BinaryDataModel, uID int64) error {
 	err := kp.stor.UpdateBin(context.Background(), data, uID)
 	return err
+}
+
+func (kp *KeepService) SyncBD(uID int64) error {
+	localModel, err := kp.stor.GetAllSaves(context.Background(), uID)
+	if err != nil {
+		return err
+	}
+	sModel, err := kp.keepClient.Sync(context.Background(), localModel)
+	if err != nil {
+		return err
+	}
+	err = kp.stor.Sync(context.Background(), sModel)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func hashPass(pass string) (string, error) {
