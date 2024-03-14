@@ -1,6 +1,5 @@
 /*
 Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
@@ -13,15 +12,25 @@ import (
 // updateCmd represents the update command
 var updateCmd = &cobra.Command{
 	Use:   "update",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Обновление базы данных на удаленном сервере.",
+	Long: `При выполнении команды, все сохраненные данные пользователя отправляются на удаленный сервер и происходит синхронизация.
+	Если на сервере оказались более новые данные, они вернутся и будут занесены в локальную базу данных.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("update called")
+		keepService, err := setupService()
+		if err != nil {
+			fmt.Printf("Ошибка при конфигурации сервиса %s", err.Error())
+		}
+		userModel, err := getUserID()
+		if err != nil {
+			fmt.Printf("Ошибка при получении данных %s", err.Error())
+			return
+		}
+		err = keepService.SyncBD(userModel.UserID)
+		if err != nil {
+			fmt.Printf("Ошибка при получении синхронизации базы данных данных %s", err.Error())
+			return
+		}
 	},
 }
 
