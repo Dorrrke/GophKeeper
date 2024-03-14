@@ -7,15 +7,18 @@ import (
 	"github.com/Dorrrke/GophKeeper/internal/domain/models"
 	gophkeeperv1 "github.com/Dorrrke/goph-keeper-proto/gen/go/gophkeeper"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/metadata"
 )
 
 type KeeperClient struct {
 	client gophkeeperv1.GophKeeperClient
 	conn   *grpc.ClientConn
+	token  string
 }
 
 func New(ctx context.Context, addr string) (*KeeperClient, error) {
-	conn, err := grpc.DialContext(ctx, addr)
+	conn, err := grpc.DialContext(ctx, addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
@@ -27,30 +30,37 @@ func New(ctx context.Context, addr string) (*KeeperClient, error) {
 }
 
 func (c *KeeperClient) Register(ctx context.Context, login, password string) error {
+	var header metadata.MD
 	_, err := c.client.SignUp(ctx, &gophkeeperv1.SignUpRequest{
 		Login:    login,
 		Password: password,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return err
 	}
+	tokens := header.Get("Authorization")
+	c.token = tokens[0]
 	return nil
 }
 
 func (c *KeeperClient) Login(ctx context.Context, login, password string) error {
+	var header metadata.MD
 	_, err := c.client.SignIn(ctx, &gophkeeperv1.SingInRequest{
 		Login:    login,
 		Password: password,
-	})
+	}, grpc.Header(&header))
 	if err != nil {
 		return err
 	}
+	c.token = header.Get("Authorization")[0]
 	return nil
 }
 
-func (c *KeeperClient) Sync(ctx context.Context, model models.SyncModel) (models.SyncModel, error) {
+func (c *KeeperClient) Sync(ctx context.Context, model models.SyncModel, uID int64) (models.SyncModel, error) {
 	protoModel := modelToProtoModel(model)
-	res, err := c.client.SyncDB(ctx, &gophkeeperv1.SyncDBRequest{
+	md := metadata.Pairs("Authorization", c.token)
+	mCtx := metadata.NewOutgoingContext(ctx, md)
+	res, err := c.client.SyncDB(mCtx, &gophkeeperv1.SyncDBRequest{
 		Auth:  protoModel.Auth,
 		Bins:  protoModel.Bins,
 		Cards: protoModel.Cards,
@@ -59,12 +69,13 @@ func (c *KeeperClient) Sync(ctx context.Context, model models.SyncModel) (models
 	if err != nil {
 		return models.SyncModel{}, err
 	}
+
 	resModel, err := protoModelToModel(models.ProtoSyncModel{
 		Cards: res.Cards,
 		Auth:  res.Auth,
 		Texts: res.Texts,
 		Bins:  res.Bins,
-	})
+	}, uID)
 	if err != nil {
 		return models.SyncModel{}, err
 	}
@@ -116,10 +127,11 @@ func modelToProtoModel(model models.SyncModel) models.ProtoSyncModel {
 	return pModel
 }
 
-func protoModelToModel(model models.ProtoSyncModel) (models.SyncModel, error) {
+func protoModelToModel(model models.ProtoSyncModel, uID int64) (models.SyncModel, error) {
 	var sModel models.SyncModel
 	for _, data := range model.Bins {
 		bin := models.SyncBinaryDataModel{
+			UserID:  uID,
 			Name:    data.Name,
 			Data:    data.Data,
 			Deleted: data.Deleted,
@@ -129,6 +141,7 @@ func protoModelToModel(model models.ProtoSyncModel) (models.SyncModel, error) {
 	}
 	for _, data := range model.Auth {
 		auth := models.SyncLoginModel{
+			UserID:   uID,
 			Name:     data.Name,
 			Login:    data.Login,
 			Password: data.Password,
@@ -143,6 +156,7 @@ func protoModelToModel(model models.ProtoSyncModel) (models.SyncModel, error) {
 			return models.SyncModel{}, err
 		}
 		card := models.SyncCardModel{
+			UserID:  uID,
 			Name:    data.Name,
 			Number:  data.Number,
 			Date:    data.Date,
@@ -154,6 +168,7 @@ func protoModelToModel(model models.ProtoSyncModel) (models.SyncModel, error) {
 	}
 	for _, data := range model.Texts {
 		text := models.SyncTextDataModel{
+			UserID:  uID,
 			Name:    data.Name,
 			Data:    data.Data,
 			Deleted: data.Deleted,

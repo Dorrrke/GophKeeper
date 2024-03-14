@@ -543,46 +543,86 @@ func (s *Storage) GetAllSaves(ctx context.Context, uID int64) (models.SyncModel,
 	}, err
 }
 
+func (s *Storage) ClearDB(ctx context.Context, uId int64) error {
+	stmt, err := s.db.Prepare("DELETE FROM logins WHERE deleted = true AND uId = ?")
+	if err != nil {
+		return err
+	}
+	if _, err := stmt.ExecContext(ctx, uId); err != nil {
+		return err
+	}
+	stmt, err = s.db.Prepare("DELETE FROM text_data WHERE deleted = true AND uId = $1")
+	if err != nil {
+		return err
+	}
+	if _, err := stmt.ExecContext(ctx, uId); err != nil {
+		return err
+	}
+	stmt, err = s.db.Prepare("DELETE FROM binares_data WHERE deleted = true AND uId = $1")
+	if err != nil {
+		return err
+	}
+	if _, err := stmt.ExecContext(ctx, uId); err != nil {
+		return err
+	}
+	stmt, err = s.db.Prepare("DELETE FROM cards WHERE deleted = true AND uId = $1")
+	if err != nil {
+		return err
+	}
+	if _, err := stmt.ExecContext(ctx, uId); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *Storage) Sync(ctx context.Context, model models.SyncModel) error {
-	stmt, err := s.db.Prepare("UPDATE cards SET name =?, number = ?, date = ?, cvv = ?, uId = ?, deleted = ?, last_update = ?")
+	stmt, err := s.db.Prepare(`INSERT INTO cards (name, number, date, cvv, uId, deleted, last_update) VALUES (?,?,?,?,?,?,?)
+	ON CONFLICT (name) DO UPDATE SET name =?, number = ?, date = ?, cvv = ?, uId = ?, deleted = ?, last_update = ? WHERE name = ? and uId = ?`)
 	if err != nil {
 		return err
 	}
 	for _, card := range model.Cards {
-		_, err := stmt.ExecContext(ctx, card.Name, card.Number, card.Date, card.CVVCode, card.UserID, card.Deleted, card.Updated)
+		_, err := stmt.ExecContext(ctx, card.Name, card.Number, card.Date, card.CVVCode, card.UserID, card.Deleted, card.Updated,
+			card.Name, card.Number, card.Date, card.CVVCode, card.UserID, card.Deleted, card.Updated, card.Name, card.UserID)
 		if err != nil {
 			return err
 		}
 	}
 
-	stmt, err = s.db.Prepare("UPDATE logins SET name =?, login = ?, password = ?, uId = ?, deleted = ?, last_update = ?")
+	stmt, err = s.db.Prepare(`INSERT INTO logins (name, login, password, uId, deleted, last_update) VALUES(?,?,?,?,?,?)
+	ON CONFLICT (name) DO UPDATE SET name =?, login = ?, password = ?, uId = ?, deleted = ?, last_update = ? WHERE name = ? and uId = ?`)
 	if err != nil {
 		return err
 	}
 	for _, auth := range model.Auth {
-		_, err := stmt.ExecContext(ctx, auth.Name, auth.Login, auth.Password, auth.UserID, auth.Deleted, auth.Updated)
+		_, err := stmt.ExecContext(ctx, auth.Name, auth.Login, auth.Password, auth.UserID, auth.Deleted, auth.Updated,
+			auth.Name, auth.Login, auth.Password, auth.UserID, auth.Deleted, auth.Updated, auth.Name, auth.UserID)
 		if err != nil {
 			return err
 		}
 	}
 
-	stmt, err = s.db.Prepare("UPDATE text_data SET name =?, data = ?, uId = ?, deleted = ?, last_update = ?")
-	if err != nil {
-		return err
-	}
 	for _, text := range model.Texts {
-		_, err := stmt.ExecContext(ctx, text.Name, text.Data, text.UserID, text.Deleted, text.Updated)
+		stmt, err = s.db.Prepare(`INSERT INTO text_data(name, data, uId, deleted, last_update) VALUES(?,?,?,?,?)
+		ON CONFLICT (name) DO UPDATE SET name = ?, data = ?, uId = ?, deleted = ?, last_update = ? WHERE name = ? and uId = ?`)
+		if err != nil {
+			return err
+		}
+		_, err := stmt.ExecContext(ctx, text.Name, text.Data, text.UserID, text.Deleted, text.Updated,
+			text.Name, text.Data, text.UserID, text.Deleted, text.Updated, text.Name, text.UserID)
 		if err != nil {
 			return err
 		}
 	}
 
-	stmt, err = s.db.Prepare("UPDATE binares_data SET name =?, data = ?, uId = ?, deleted = ?, last_update = ?")
+	stmt, err = s.db.Prepare(`INSERT INTO binares_data(name, data, uId, deleted, last_update) VALUES(?,?,?,?,?)
+	ON CONFLICT (name) DO UPDATE SET name =?, data = ?, uId = ?, deleted = ?, last_update = ? WHERE name = ? and uId = ?`)
 	if err != nil {
 		return err
 	}
 	for _, bin := range model.Bins {
-		_, err := stmt.ExecContext(ctx, bin.Name, bin.Data, bin.UserID, bin.Deleted, bin.Updated)
+		_, err := stmt.ExecContext(ctx, bin.Name, bin.Data, bin.UserID, bin.Deleted, bin.Updated,
+			bin.Name, bin.Data, bin.UserID, bin.Deleted, bin.Updated, bin.Name, bin.UserID)
 		if err != nil {
 			return err
 		}

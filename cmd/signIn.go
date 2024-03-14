@@ -23,7 +23,7 @@ var signInCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("signIn called")
-		keepService, err := setupService()
+		keepService, err := setupService(false)
 		if err != nil {
 			fmt.Printf("Ошибка при конфигурации сервиса %s", err.Error())
 		}

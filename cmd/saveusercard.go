@@ -24,7 +24,7 @@ var saveusercardCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("saveusercard called")
 
-		keepService, err := setupService()
+		keepService, err := setupService(false)
 		if err != nil {
 			fmt.Printf("Ошибка при конфигурации сервиса %s", err.Error())
 		}
@@ -56,7 +56,7 @@ var saveusercardCmd = &cobra.Command{
 			fmt.Printf("Данные успешно обновлены")
 			return
 		}
-		cID, err := keepService.SaveCard(card, userModel.UserID)
+		_, err = keepService.SaveCard(card, userModel.UserID)
 		if err != nil {
 			if errors.Is(err, storage.ErrCardAlredyExist) {
 				fmt.Printf("Карта с таким именем уже сохранена.")
@@ -66,7 +66,7 @@ var saveusercardCmd = &cobra.Command{
 			return
 		}
 
-		fmt.Println(cID)
+		fmt.Println("Успешно сохранено!")
 	},
 }
 

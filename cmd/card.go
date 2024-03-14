@@ -4,11 +4,13 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 
+	"github.com/Dorrrke/GophKeeper/internal/client"
 	"github.com/Dorrrke/GophKeeper/internal/coder"
 	"github.com/Dorrrke/GophKeeper/internal/config"
 	"github.com/Dorrrke/GophKeeper/internal/domain/models"
@@ -26,7 +28,7 @@ var cardCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("card called")
-		keepService, err := setupService()
+		keepService, err := setupService(false)
 		if err != nil {
 			fmt.Printf("Ошибка при конфигурации сервиса %s", err.Error())
 		}
@@ -77,13 +79,22 @@ func init() {
 	// cardCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
-func setupService() (*services.KeepService, error) {
+func setupService(sync bool) (*services.KeepService, error) {
 	cfg := config.ReadConfig()
 	storage, err := storage.New(cfg.DBPath)
 	if err != nil {
 		return nil, err
 	}
-	keepService := services.New(storage)
+	if sync {
+		clietn, err := client.New(context.Background(), cfg.ServerAddr)
+		if err != nil {
+			return nil, fmt.Errorf("clietn init error: %w", err)
+		}
+		keepService := services.New(clietn, storage)
+		return keepService, nil
+	}
+	client := client.KeeperClient{}
+	keepService := services.New(&client, storage)
 	return keepService, nil
 }
 

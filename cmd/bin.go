@@ -20,7 +20,7 @@ var binCmd = &cobra.Command{
 	При наличии подключения к интернету, данные будут браться из удаленного сервера`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("bin called")
-		keepService, err := setupService()
+		keepService, err := setupService(false)
 		if err != nil {
 			fmt.Printf("Ошибка при конфигурации сервиса %s", err.Error())
 		}

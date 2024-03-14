@@ -6,7 +6,11 @@ package cmd
 import (
 	"fmt"
 
+	errText "github.com/Dorrrke/GophKeeper/internal/domain/errors"
+	"github.com/Dorrrke/GophKeeper/internal/domain/models"
+	"github.com/Dorrrke/GophKeeper/internal/services"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc/status"
 )
 
 // updateCmd represents the update command
@@ -17,7 +21,7 @@ var updateCmd = &cobra.Command{
 	Если на сервере оказались более новые данные, они вернутся и будут занесены в локальную базу данных.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("update called")
-		keepService, err := setupService()
+		keepService, err := setupService(true)
 		if err != nil {
 			fmt.Printf("Ошибка при конфигурации сервиса %s", err.Error())
 		}
@@ -26,11 +30,18 @@ var updateCmd = &cobra.Command{
 			fmt.Printf("Ошибка при получении данных %s", err.Error())
 			return
 		}
+		authOnServer(keepService, userModel)
+		if err != nil {
+			fmt.Printf("Ошибка при входе в сервер сервиса %s", err.Error())
+			fmt.Println(err.Error())
+			return
+		}
 		err = keepService.SyncBD(userModel.UserID)
 		if err != nil {
 			fmt.Printf("Ошибка при получении синхронизации базы данных данных %s", err.Error())
 			return
 		}
+		fmt.Println("Данные синхронизированны!")
 	},
 }
 
@@ -46,4 +57,23 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// updateCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+}
+
+func authOnServer(keepService *services.KeepService, userModel models.UserModel) error {
+	err := keepService.ServerLogin(userModel)
+	if err != nil {
+		rpcStatus, ok := status.FromError(err)
+		if !ok {
+			return err
+		}
+		if rpcStatus.Message() != errText.NoUserOnServerError {
+			return err
+		}
+		err := keepService.ServerRegister(userModel)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return nil
 }

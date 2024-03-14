@@ -32,7 +32,7 @@ var saveBinCmd = &cobra.Command{
 			fmt.Printf("Ошибка при получении данных %s", err.Error())
 			return
 		}
-		keepService, err := setupService()
+		keepService, err := setupService(false)
 		if err != nil {
 			fmt.Printf("Ошибка при конфигурации сервиса %s", err.Error())
 			return
@@ -55,7 +55,7 @@ var saveBinCmd = &cobra.Command{
 			return
 		}
 
-		bID, err := keepService.SaveBinaryData(bModel, userModel.UserID)
+		_, err = keepService.SaveBinaryData(bModel, userModel.UserID)
 		if err != nil {
 			if errors.Is(err, storage.ErrBinAlredyExist) {
 				fmt.Printf("Бинарные данные с таким именем уже существуют")
@@ -64,7 +64,7 @@ var saveBinCmd = &cobra.Command{
 			fmt.Printf("Ошибка при сохранении данных: %s", err.Error())
 			return
 		}
-		fmt.Println(bID)
+		fmt.Println("Успешно сохранено!")
 	},
 }
 
