@@ -43,6 +43,19 @@ var saveusercardCmd = &cobra.Command{
 			fmt.Printf("Ошибка при получении данных %s", err.Error())
 			return
 		}
+		updateFlag, err := cmd.Flags().GetBool("update")
+		if err != nil {
+			fmt.Printf("Ошибка при получении флага: %s", err.Error())
+		}
+		if updateFlag {
+			err := keepService.UpdateCard(card, userModel.UserID)
+			if err != nil {
+				fmt.Printf("Ошибка при обновлении данных: %s", err.Error())
+				return
+			}
+			fmt.Printf("Данные успешно обновлены")
+			return
+		}
 		cID, err := keepService.SaveCard(card, userModel.UserID)
 		if err != nil {
 			if errors.Is(err, storage.ErrCardAlredyExist) {
@@ -59,6 +72,7 @@ var saveusercardCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(saveusercardCmd)
+	saveusercardCmd.Flags().Bool("update", false, "Обновить существующие данные")
 
 	// Here you will define your flags and configuration settings.
 

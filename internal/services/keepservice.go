@@ -26,6 +26,14 @@ type Storage interface {
 	GetLoginByName(ctx context.Context, name string, uID int64) (models.LoginModel, error)
 	GetTextDataByName(ctx context.Context, name string, uID int64) (models.TextDataModel, error)
 	GetBinByName(ctx context.Context, name string, uID int64) (models.BinaryDataModel, error)
+	DeleteCard(ctx context.Context, name string, uID int64) error
+	DeleteLogin(ctx context.Context, name string, uID int64) error
+	DeleteText(ctx context.Context, name string, uID int64) error
+	DeleteBin(ctx context.Context, name string, uID int64) error
+	UpdateCard(ctx context.Context, card models.CardModel, uID int64) error
+	UpdateLogin(ctx context.Context, auth models.LoginModel, uID int64) error
+	UpdateText(ctx context.Context, data models.TextDataModel, uID int64) error
+	UpdateBin(ctx context.Context, data models.BinaryDataModel, uID int64) error
 }
 
 type KeepService struct {
@@ -162,6 +170,44 @@ func (kp *KeepService) GetBinByName(tName string, uID int64) (models.BinaryDataM
 		return models.BinaryDataModel{}, err
 	}
 	return tData, nil
+}
+
+func (kp *KeepService) DeleteCardByName(name string, uID int64) error {
+	err := kp.stor.DeleteCard(context.Background(), name, uID)
+	return err
+}
+
+func (kp *KeepService) DeleteLoginByName(name string, uID int64) error {
+	err := kp.stor.DeleteLogin(context.Background(), name, uID)
+	return err
+}
+func (kp *KeepService) DeleteTextByName(name string, uID int64) error {
+	err := kp.stor.DeleteText(context.Background(), name, uID)
+	return err
+}
+func (kp *KeepService) DeleteBinByName(name string, uID int64) error {
+	err := kp.stor.DeleteBin(context.Background(), name, uID)
+	return err
+}
+
+func (kp *KeepService) UpdateCard(card models.CardModel, uID int64) error {
+	err := kp.stor.UpdateCard(context.Background(), card, uID)
+	return err
+}
+
+func (kp *KeepService) UpdateLogin(auth models.LoginModel, uID int64) error {
+	err := kp.stor.UpdateLogin(context.Background(), auth, uID)
+	return err
+}
+
+func (kp *KeepService) UpdateText(data models.TextDataModel, uID int64) error {
+	err := kp.stor.UpdateText(context.Background(), data, uID)
+	return err
+}
+
+func (kp *KeepService) UpdateBin(data models.BinaryDataModel, uID int64) error {
+	err := kp.stor.UpdateBin(context.Background(), data, uID)
+	return err
 }
 
 func hashPass(pass string) (string, error) {

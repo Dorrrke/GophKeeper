@@ -37,10 +37,25 @@ var saveBinCmd = &cobra.Command{
 			fmt.Printf("Ошибка при конфигурации сервиса %s", err.Error())
 			return
 		}
-		bID, err := keepService.SaveBinaryData(models.BinaryDataModel{
+		bModel := models.BinaryDataModel{
 			Name: args[0],
 			Data: bData,
-		}, userModel.UserID)
+		}
+		updateFlag, err := cmd.Flags().GetBool("update")
+		if err != nil {
+			fmt.Printf("Ошибка при получении флага: %s", err.Error())
+		}
+		if updateFlag {
+			err := keepService.UpdateBin(bModel, userModel.UserID)
+			if err != nil {
+				fmt.Printf("Ошибка при обновлении данных: %s", err.Error())
+				return
+			}
+			fmt.Printf("Данные успешно обновлены")
+			return
+		}
+
+		bID, err := keepService.SaveBinaryData(bModel, userModel.UserID)
 		if err != nil {
 			if errors.Is(err, storage.ErrBinAlredyExist) {
 				fmt.Printf("Бинарные данные с таким именем уже существуют")
@@ -55,7 +70,7 @@ var saveBinCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(saveBinCmd)
-
+	saveBinCmd.Flags().Bool("update", false, "Обновить существующие данные")
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command

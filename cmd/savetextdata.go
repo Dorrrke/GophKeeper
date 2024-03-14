@@ -33,7 +33,10 @@ var savetextdataCmd = &cobra.Command{
 		if err != nil {
 			fmt.Printf("Ошибка при конфигурации сервиса %s", err.Error())
 		}
-
+		uFlag, err := cmd.Flags().GetBool("update")
+		if err != nil {
+			fmt.Printf("Ошибка при получении флага: %s", err.Error())
+		}
 		filePath, err := cmd.Flags().GetBool("file")
 		if err != nil {
 			fmt.Printf("Ошибка при получении флага: %s", err.Error())
@@ -53,6 +56,15 @@ var savetextdataCmd = &cobra.Command{
 				Name: args[0],
 				Data: data,
 			}
+			if uFlag {
+				err := keepService.UpdateText(textData, userModel.UserID)
+				if err != nil {
+					fmt.Printf("Ошибка при обновлении данных: %s", err.Error())
+					return
+				}
+				fmt.Printf("Данные успешно обновлены")
+				return
+			}
 			cID, err := keepService.SaveTextData(textData, userModel.UserID)
 			if err != nil {
 				if errors.Is(err, storage.ErrTextAlredyExist) {
@@ -67,6 +79,15 @@ var savetextdataCmd = &cobra.Command{
 			textData := models.TextDataModel{
 				Name: args[0],
 				Data: args[1],
+			}
+			if uFlag {
+				err := keepService.UpdateText(textData, userModel.UserID)
+				if err != nil {
+					fmt.Printf("Ошибка при обновлении данных: %s", err.Error())
+					return
+				}
+				fmt.Printf("Данные успешно обновлены")
+				return
 			}
 			cID, err := keepService.SaveTextData(textData, userModel.UserID)
 			if err != nil {
@@ -85,6 +106,7 @@ var savetextdataCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(savetextdataCmd)
 	savetextdataCmd.Flags().Bool("file", false, "Файл с текстовыми данными для сохранения")
+	savetextdataCmd.Flags().Bool("update", false, "Обновить существующие данные")
 
 	// Here you will define your flags and configuration settings.
 

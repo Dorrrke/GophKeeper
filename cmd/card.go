@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Dorrrke/GophKeeper/internal/coder"
 	"github.com/Dorrrke/GophKeeper/internal/config"
 	"github.com/Dorrrke/GophKeeper/internal/domain/models"
 	"github.com/Dorrrke/GophKeeper/internal/services"
@@ -34,6 +35,19 @@ var cardCmd = &cobra.Command{
 			fmt.Printf("Ошибка при получении данных %s", err.Error())
 			return
 		}
+		delFlag, err := cmd.Flags().GetBool("delete")
+		if err != nil {
+			fmt.Printf("Ошибка при получении флага: %s", err.Error())
+		}
+		if delFlag {
+			err = keepService.DeleteCardByName(args[0], userModel.UserID)
+			if err != nil {
+				fmt.Printf("Ошибка при удалении данных %s", err.Error())
+				return
+			}
+			fmt.Printf("Успешное удаление\n")
+			return
+		}
 		card, err := keepService.GetCardByName(args[0], userModel.UserID)
 		if err != nil {
 			if errors.Is(err, storage.ErrCardNotExist) {
@@ -50,6 +64,7 @@ var cardCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(cardCmd)
+	cardCmd.Flags().Bool("delete", false, "Удаление данных")
 
 	// Here you will define your flags and configuration settings.
 
@@ -77,8 +92,12 @@ func getUserID() (models.UserModel, error) {
 	if err != nil {
 		return models.UserModel{}, err
 	}
+	data, err := coder.Decoder(f)
+	if err != nil {
+		return models.UserModel{}, err
+	}
 	var userModel models.UserModel
-	err = json.Unmarshal(f, &userModel)
+	err = json.Unmarshal(data, &userModel)
 	if err != nil {
 		return models.UserModel{}, err
 	}
