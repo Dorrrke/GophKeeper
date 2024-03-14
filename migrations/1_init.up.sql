@@ -1,4 +1,3 @@
-
 CREATE TABLE IF NOT EXISTS cards (
     cId INTEGER PRIMARY KEY, 
     name TEXT, 
@@ -6,7 +5,6 @@ CREATE TABLE IF NOT EXISTS cards (
     date TEXT, 
     cvv INTEGER
 );
-
 CREATE TABLE IF NOT EXISTS logins (
     lId INTEGER PRIMARY KEY, 
     name TEXT, 
