@@ -9,14 +9,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// gettextsCmd represents the gettexts command
-var gettextsCmd = &cobra.Command{
-	Use:   "gettexts",
-	Short: "Отображает сохраненные текстовые данные пользователя",
-	Long: `При вызове отображает список всех сохраненных текстовых данных пользователя.
+// binListCmd represents the binList command
+var binListCmd = &cobra.Command{
+	Use:   "bin_list",
+	Short: "Отображает список сохраненных бинарных данных",
+	Long: `При вызове отображает список всех сохраненных бинарных данных пользователя.
 	При наличии подключения к интернету, данные будут браться из удаленного сервера.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("gettexts called")
+		fmt.Println("binList called")
 		keepService, err := setupService()
 		if err != nil {
 			fmt.Printf("Ошибка при конфигурации сервиса %s", err.Error())
@@ -26,35 +26,35 @@ var gettextsCmd = &cobra.Command{
 			fmt.Printf("Ошибка при получении данных %s", err.Error())
 			return
 		}
-		res, err := keepService.GetTextData(userModel.UserID)
+		bins, err := keepService.GetBins(userModel.UserID)
 		if err != nil {
 			fmt.Printf("Ошибка при получении данных: %s", err.Error())
 			return
 		}
-		if len(res) == 0 {
+		if len(bins) == 0 {
 			fmt.Printf("Нет сохраненных данных")
 			return
 		}
-		texts := ""
-		for _, text := range res {
-			cardStr := fmt.Sprintf("\nText name: %s \n\tData: %s\n",
-				text.Name, text.Data)
-			texts += cardStr
+		bList := ""
+		for _, bin := range bins {
+			binStr := fmt.Sprintf("\n\tBin name: %s\n",
+				bin.Name)
+			bList += binStr
 		}
-		fmt.Printf("Texts: %s", texts)
+		fmt.Printf("Bin list: %s", bList)
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(gettextsCmd)
+	rootCmd.AddCommand(binListCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// gettextsCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// binListCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// gettextsCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// binListCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

@@ -4,8 +4,12 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"errors"
 	"fmt"
+	"strconv"
 
+	"github.com/Dorrrke/GophKeeper/internal/domain/models"
+	"github.com/Dorrrke/GophKeeper/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -20,12 +24,36 @@ var saveusercardCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("saveusercard called")
 
-		res, err := saveUserCard(args[0], args[1], args[2], args[3])
+		keepService, err := setupService()
 		if err != nil {
+			fmt.Printf("Ошибка при конфигурации сервиса %s", err.Error())
+		}
+		cvvCode, err := strconv.Atoi(args[3])
+		if err != nil {
+			fmt.Printf("Внутренняя ошибка: %s", err.Error())
+		}
+		card := models.CardModel{
+			Name:    args[0],
+			Number:  args[1],
+			Date:    args[2],
+			CVVCode: cvvCode,
+		}
+		userModel, err := getUserID()
+		if err != nil {
+			fmt.Printf("Ошибка при получении данных %s", err.Error())
+			return
+		}
+		cID, err := keepService.SaveCard(card, userModel.UserID)
+		if err != nil {
+			if errors.Is(err, storage.ErrCardAlredyExist) {
+				fmt.Printf("Карта с таким именем уже сохранена.")
+				return
+			}
 			fmt.Printf("Ошибка при сохранении карты: %s", err.Error())
+			return
 		}
 
-		fmt.Println(res)
+		fmt.Println(cID)
 	},
 }
 

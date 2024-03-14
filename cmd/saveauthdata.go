@@ -4,8 +4,11 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"errors"
 	"fmt"
 
+	"github.com/Dorrrke/GophKeeper/internal/domain/models"
+	"github.com/Dorrrke/GophKeeper/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -21,11 +24,30 @@ var saveauthdataCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("saveauthdata called")
 
-		res, err := saveAuthData(args[0], args[1], args[2])
+		keepService, err := setupService()
 		if err != nil {
-			fmt.Printf("Ошибка при сохранении данных: %s", err.Error())
+			fmt.Printf("Ошибка при конфигурации сервиса %s", err.Error())
 		}
-		fmt.Println(res)
+		authData := models.LoginModel{
+			Name:     args[0],
+			Login:    args[1],
+			Password: args[2],
+		}
+		userModel, err := getUserID()
+		if err != nil {
+			fmt.Printf("Ошибка при получении данных %s", err.Error())
+			return
+		}
+		cID, err := keepService.SaveLogin(authData, userModel.UserID)
+		if err != nil {
+			if errors.Is(err, storage.ErrLoginAlredyExist) {
+				fmt.Printf("Пара логин/пароль с таким именем уже сохранена.")
+				return
+			}
+			fmt.Printf("Ошибка при сохранении данных: %s", err.Error())
+			return
+		}
+		fmt.Println(cID)
 	},
 }
 
