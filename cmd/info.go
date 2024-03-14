@@ -11,11 +11,11 @@ import (
 
 var (
 	// buildVersion - версия сборки.
-	buildVersion string
+	BuildVersion string
 	// buildDate - дата сборки.
-	buildDate string
+	BuildDate string
 	// buildCommit - комментарии к сборке.
-	buildCommit string
+	BuildCommit string
 )
 
 // infoCmd represents the info command
@@ -24,16 +24,16 @@ var infoCmd = &cobra.Command{
 	Short: "Версия утилиты",
 	Long:  `При вызове отображается версия утилиты, номер сборки, и время сборки.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if buildVersion == "" {
-			buildVersion = "N/A"
+		if BuildVersion == "" {
+			BuildVersion = "N/A"
 		}
-		if buildDate == "" {
-			buildDate = "N/A"
+		if BuildDate == "" {
+			BuildDate = "N/A"
 		}
-		if buildCommit == "" {
-			buildCommit = "N/A"
+		if BuildCommit == "" {
+			BuildCommit = "N/A"
 		}
-		fmt.Printf("\nGophKeeper \nSimple cli utility for storing passwords, bank card data, text and binary data.\nBuild: %s \nCommit: %s \nBuild Time: %s", buildVersion, buildCommit, buildDate)
+		fmt.Printf("\nGophKeeper \nSimple cli utility for storing passwords, bank card data, text and binary data.\nBuild: %s \nCommit: %s \nBuild Time: %s\n", BuildVersion, BuildCommit, BuildDate)
 	},
 }
 

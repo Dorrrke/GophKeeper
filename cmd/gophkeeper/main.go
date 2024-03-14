@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/Dorrrke/GophKeeper/cmd"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -17,22 +15,8 @@ var (
 )
 
 func main() {
-	if buildVersion == "" {
-		buildVersion = "N/A"
-	} else {
-		fmt.Printf("Build version: %s\n", buildVersion)
-	}
-
-	if buildDate == "" {
-		buildDate = "N/A"
-	} else {
-		fmt.Printf("Build date: %s\n", buildDate)
-	}
-
-	if buildCommit == "" {
-		buildCommit = "N/A"
-	} else {
-		fmt.Printf("Build commit: %s\n", buildCommit)
-	}
+	cmd.BuildVersion = buildVersion
+	cmd.BuildDate = buildDate
+	cmd.BuildCommit = buildCommit
 	cmd.Execute()
 }
