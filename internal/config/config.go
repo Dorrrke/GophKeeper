@@ -6,16 +6,18 @@ import (
 )
 
 type Config struct {
-	ServerAddr string
-	DBPath     string
-	DebugFlag  bool
+	ServerAddr    string
+	DBPath        string
+	MigrationPath string
+	DebugFlag     bool
 }
 
 func ReadConfig() *Config {
 	var cfg Config
 	var debugEnable *bool
 	flag.StringVar(&cfg.ServerAddr, "a", "", "server address")
-	flag.StringVar(&cfg.DBPath, "d", "", "path to sqlite db")
+	flag.StringVar(&cfg.DBPath, "d", "internal/storage/gophkeeper.db", "path to sqlite db")
+	flag.StringVar(&cfg.MigrationPath, "m", "migrations", "path to sqlite db")
 	debugEnable = flag.Bool("debug", false, "debug on")
 	flag.Parse()
 
