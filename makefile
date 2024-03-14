@@ -14,5 +14,5 @@ download:
 	go mod verify
 
 run: download
-	go run ./cmd/space_agent/main.go --debug
+	go run ./cmd/gophkeeper/main.go -help
 
