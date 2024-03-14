@@ -37,6 +37,7 @@ type Storage interface {
 	UpdateBin(ctx context.Context, data models.BinaryDataModel, uID int64) error
 	GetAllSaves(ctx context.Context, uID int64) (models.SyncModel, error)
 	Sync(ctx context.Context, model models.SyncModel) error
+	ClearDB(ctx context.Context, uId int64) error
 }
 
 type KeepService struct {
@@ -45,9 +46,10 @@ type KeepService struct {
 }
 
 // TODO: Добавить килент
-func New(stor Storage) *KeepService {
+func New(client *client.KeeperClient, stor Storage) *KeepService {
 	return &KeepService{
-		stor: stor,
+		keepClient: client,
+		stor:       stor,
 	}
 }
 
@@ -215,17 +217,29 @@ func (kp *KeepService) UpdateBin(data models.BinaryDataModel, uID int64) error {
 	return err
 }
 
+func (kp *KeepService) ServerLogin(user models.UserModel) error {
+	err := kp.keepClient.Login(context.Background(), user.Login, user.Hash)
+	return err
+}
+
+func (kp *KeepService) ServerRegister(user models.UserModel) error {
+	err := kp.keepClient.Register(context.Background(), user.Login, user.Hash)
+	return err
+}
+
 func (kp *KeepService) SyncBD(uID int64) error {
 	localModel, err := kp.stor.GetAllSaves(context.Background(), uID)
 	if err != nil {
 		return err
 	}
-	sModel, err := kp.keepClient.Sync(context.Background(), localModel)
+	sModel, err := kp.keepClient.Sync(context.Background(), localModel, uID)
 	if err != nil {
 		return err
 	}
-	err = kp.stor.Sync(context.Background(), sModel)
-	if err != nil {
+	if err = kp.stor.Sync(context.Background(), sModel); err != nil {
+		return err
+	}
+	if err = kp.stor.ClearDB(context.Background(), uID); err != nil {
 		return err
 	}
 	return nil

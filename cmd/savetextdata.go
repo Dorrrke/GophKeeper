@@ -29,7 +29,7 @@ var savetextdataCmd = &cobra.Command{
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("savetextdata called")
-		keepService, err := setupService()
+		keepService, err := setupService(false)
 		if err != nil {
 			fmt.Printf("Ошибка при конфигурации сервиса %s", err.Error())
 		}
@@ -65,7 +65,7 @@ var savetextdataCmd = &cobra.Command{
 				fmt.Printf("Данные успешно обновлены")
 				return
 			}
-			cID, err := keepService.SaveTextData(textData, userModel.UserID)
+			_, err = keepService.SaveTextData(textData, userModel.UserID)
 			if err != nil {
 				if errors.Is(err, storage.ErrTextAlredyExist) {
 					fmt.Printf("Текстовые данные с таким именем уже существуют")
@@ -74,7 +74,7 @@ var savetextdataCmd = &cobra.Command{
 				fmt.Printf("Ошибка при сохранении данных: %s", err.Error())
 				return
 			}
-			fmt.Println(cID)
+			fmt.Println("Успешно сохранено!")
 		} else {
 			textData := models.TextDataModel{
 				Name: args[0],
@@ -89,7 +89,7 @@ var savetextdataCmd = &cobra.Command{
 				fmt.Printf("Данные успешно обновлены")
 				return
 			}
-			cID, err := keepService.SaveTextData(textData, userModel.UserID)
+			_, err := keepService.SaveTextData(textData, userModel.UserID)
 			if err != nil {
 				if errors.Is(err, storage.ErrTextAlredyExist) {
 					fmt.Printf("Текстовые данные с таким именем уже существуют")
@@ -98,7 +98,7 @@ var savetextdataCmd = &cobra.Command{
 				fmt.Printf("Ошибка при сохранении данных: %s", err.Error())
 				return
 			}
-			fmt.Println(cID)
+			fmt.Println("Успешно сохранено!")
 		}
 	},
 }

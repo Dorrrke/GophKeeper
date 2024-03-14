@@ -24,7 +24,7 @@ var saveauthdataCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("saveauthdata called")
 
-		keepService, err := setupService()
+		keepService, err := setupService(false)
 		if err != nil {
 			fmt.Printf("Ошибка при конфигурации сервиса %s", err.Error())
 		}
@@ -51,7 +51,7 @@ var saveauthdataCmd = &cobra.Command{
 			fmt.Printf("Данные успешно обновлены")
 			return
 		}
-		cID, err := keepService.SaveLogin(authData, userModel.UserID)
+		_, err = keepService.SaveLogin(authData, userModel.UserID)
 		if err != nil {
 			if errors.Is(err, storage.ErrLoginAlredyExist) {
 				fmt.Printf("Пара логин/пароль с таким именем уже сохранена.")
@@ -60,7 +60,7 @@ var saveauthdataCmd = &cobra.Command{
 			fmt.Printf("Ошибка при сохранении данных: %s", err.Error())
 			return
 		}
-		fmt.Println(cID)
+		fmt.Println("Успешно сохранено!")
 	},
 }
 

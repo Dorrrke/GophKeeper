@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -16,8 +17,8 @@ var getcardsCmd = &cobra.Command{
 	Long: `При вызове отображает список всех сохраненных пользователем карт.
 	При наличии подключения к интернету, данные будут браться из удаленного сервера`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("getcards called")
-		keepService, err := setupService()
+		fmt.Println("getcards called" + time.Now().Format(time.RFC3339))
+		keepService, err := setupService(false)
 		if err != nil {
 			fmt.Printf("Ошибка при конфигурации сервиса %s", err.Error())
 		}
